@@ -3,170 +3,124 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
- 
-  
 }
-  h1 {
+h1 {
   color: rgb(0, 57, 57);
-  font-size: 30px;
+  font-size: 40px;
   text-align: center;
-  
-  
-  
 }
 
 body {
-  font-family:cursive;
-  
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
 }
 h2 {
-  font-size: 22px;
-
+  font-size: 25px;
 }
 h2 {
   color: rgb(130, 100, 58);
   text-align: center;
   margin-top: 65px;
-  margin-bottom: 40px; /* augmente l’espace sous le titre */ 
+  margin-bottom: 40px; /* augmente l’espace sous le titre */
 }
-
-
-
-
-  
-  
-  
-
-
 
 .kyu10 a {
   background-color: rgb(194, 114, 58);
-
-
-  
-  
-  }
+}
 
 .kyu9 a {
   background-color: rgb(194, 114, 58);
-
 }
 
 .kyu8 a {
   background-color: rgb(77, 77, 187);
-
 }
 
 .kyu7 a {
   background-color: rgb(77, 77, 187);
-
 }
 
 .kyu6 a {
   background-color: rgb(211, 211, 46);
-
 }
 
 .kyu5 a {
   background-color: rgb(211, 211, 46);
-
 }
 
 .kyu4 a {
   background-color: rgb(54, 150, 54);
-
 }
 
 .kyu3 a {
   background-color: rgb(54, 150, 54);
-
 }
 
- .kyu2 a {
+.kyu2 a {
   background-color: rgb(138, 57, 57);
-
 }
 
 .kyu1 a {
-  background-color:rgb(138, 57, 57);
-
+  background-color: rgb(138, 57, 57);
 }
 
 .liste-kyu .shodan a {
- 
-  
   background-color: black;
-  
-  font-size: 18px;
-  font-family:cursive;
+
+  font-size: 20px;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
   color: yellow;
   display: block; /* donne une largeur uniforme */
-  width: 250px; /* même longueur pour toutes les ceintures */ 
-
-  
+  width: 250px; /* même longueur pour toutes les ceintures */
 }
-.liste-kyu a { display: block; /* donne une largeur uniforme */
-               width: 250px; /* même longueur pour toutes les ceintures */ 
-               
-               text-decoration: none;
-               color:black;
-               font-size: 1.2rem; border: 0.1px solid black;
-               font-size: 16px;
-               font-family:cursive;
-               padding: 0.5px 10px; /* padding réduit */ 
-               margin: 2px auto; /* espace réduit entre les ceintures */
-               
-               }
-               .liste-kyu {
-  list-style: none;   /* enlève les points */
+.liste-kyu a {
+  display: block; /* donne une largeur uniforme */
+  width: 250px; /* même longueur pour toutes les ceintures */
+
+  text-decoration: none;
+  color: black;
+  font-size: 1.2rem;
+  border: 0.1px solid black;
+  font-size: 20px;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  padding: 0.5px 10px; /* padding réduit */
+  margin: 2px auto; /* espace réduit entre les ceintures */
+}
+.liste-kyu {
+  list-style: none; /* enlève les points */
   padding: 0;
   margin: 0;
 }
 
 .liste-kyu li {
-  list-style: none;   /* sécurité supplémentaire */
+  list-style: none; /* sécurité supplémentaire */
 }
 .liste-kyu {
-  margin-left: -60px;   /* décale tout le bloc vers la droite */
+  margin-left: -60px; /* décale tout le bloc vers la droite */
 }
-
-
-
 
 #logo img {
-  
+  position: absolute;
+  top: -180px;
+  right: -65px;
+  width: 190px;
   
 
-    position: absolute;
-     top: -180px;
-      right: -65px;
-      width: 190px;
-      
-      
-      
-    transform: scale(0.3);
+  transform: scale(0.3);
 }
-      
-
-
-
-  
-
 
 #logokyokushin {
+  
   position: absolute;
   left: 50%;
-  bottom: 40px;
+  bottom: 1px;
   transform: translateX(-50%);
+  
 }
 
 #logokyokushin img {
-  width: 20vw;       /* 20% de la largeur de l’écran */
-  max-width: 255px;  /* ne dépasse jamais 255px */
-  min-width: 200px;  /* reste lisible sur mobile */
-  height: auto;      /* garde les proportions */
+  width: 20vw; /* 20% de la largeur de l’écran */
+  max-width: 255px; /* ne dépasse jamais 255px */
+  min-width: 170px; /* reste lisible sur mobile */
+  height: auto; /* garde les proportions */
+  
 }
-
-
-  
-  
