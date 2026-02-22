@@ -95,7 +95,7 @@ h2 {
   list-style: none; /* sécurité supplémentaire */
 }
 .liste-kyu {
-  margin-left: -60px; /* décale tout le bloc vers la droite */
+  margin-left: 0px; /* décale tout le bloc vers la droite */
 }
 
 #logo img {
@@ -109,7 +109,7 @@ h2 {
 
 #logokyokushin {
   text-align: center;
-  margin-top: 25px; /* ajuste comme tu veux */
+  margin-top: 200px; /* ajuste comme tu veux */
 }
 
 #logokyokushin img {
