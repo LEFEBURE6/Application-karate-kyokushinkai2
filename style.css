@@ -6,12 +6,12 @@ body {
 }
 h1 {
   color: rgb(0, 57, 57);
-  font-size: 30px;
+  font-size: 34px;
   text-align: center;
 }
 
 body {
-  font-family:cursive
+  font-family: "Poppins", sans-serif;
 }
 h2 {
   font-size: 25px;
@@ -67,7 +67,7 @@ h2 {
   background-color: black;
 
   font-size: 20px;
-  font-family:cursive;
+  font-family:"Poppins", sans-serif;
   color: yellow;
   display: block; /* donne une largeur uniforme */
   width: 250px; /* même longueur pour toutes les ceintures */
@@ -109,7 +109,7 @@ h2 {
 
 #logokyokushin {
   text-align: center;
-  margin-top: 200px; /* ajuste comme tu veux */
+  margin-top: 150px; /* ajuste comme tu veux */
 }
 
 #logokyokushin img {
