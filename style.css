@@ -5,8 +5,8 @@ body {
   height: 100%;
 }
 h1 {
-  color: rgb(0, 57, 57);
-  font-size: 32px;
+  color: #003939;
+  font-size: 26px;
   text-align: center;
 }
 
@@ -101,7 +101,7 @@ h2 {
 #logo img {
   position: absolute;
   top: -180px;
-  right: -65px;
+  right: -40px;
   width: 155px;
 
   transform: scale(0.3);
