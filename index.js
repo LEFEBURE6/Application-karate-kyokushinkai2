@@ -1,18 +1,20 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors'); // ✅
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 
 connectDB();
 
 const app = express();
+
+app.use(cors()); // ✅ IMPORTANT
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 
-// ➜ Route GET pour tester ton backend
 app.get("/", (req, res) => {
-  res.send("Backend opérationnel ✔️");
+  res.json({ message: "Backend opérationnel ✔️" });
 });
 
 const PORT = process.env.PORT || 5000;
