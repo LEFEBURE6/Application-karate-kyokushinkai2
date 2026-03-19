@@ -4,136 +4,171 @@ const bcrypt = require('bcryptjs');
 const paypal = require('@paypal/checkout-server-sdk');
 const crypto = require("crypto");
 
-// Configuration PayPal
+/* ============================
+   CONFIG PAYPAL
+============================ */
 const environment = process.env.PAYPAL_MODE === 'live'
-  ? new paypal.core.LiveEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET)
-  : new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET);
+  ? new paypal.core.LiveEnvironment(
+      process.env.PAYPAL_CLIENT_ID,
+      process.env.PAYPAL_CLIENT_SECRET
+    )
+  : new paypal.core.SandboxEnvironment(
+      process.env.PAYPAL_CLIENT_ID,
+      process.env.PAYPAL_CLIENT_SECRET
+    );
 
 const client = new paypal.core.PayPalHttpClient(environment);
 
 /* ============================
-   INSCRIPTION
+   INSCRIPTION (CORRIGÉE)
 ============================ */
 const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-  const userExists = await User.findOne({ email });
-  if (userExists) return res.status(400).json({ message: 'Utilisateur déjà inscrit' });
+    // Vérification des champs
+    if (!email || !password) {
+      return res.status(400).json({ message: "Champs requis" });
+    }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashedPassword });
+    // Vérifier si utilisateur existe
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: "Utilisateur déjà inscrit" });
+    }
 
-  res.status(201).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    token: generateToken(user._id)
-  });
+    // Hash mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Création user
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword
+    });
+
+    // Token
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      token
+    });
+
+  } catch (error) {
+    console.error("❌ ERREUR registerUser :", error);
+    res.status(500).json({
+      message: "Erreur serveur",
+      error: error.message
+    });
+  }
 };
 
 /* ============================
    MOT DE PASSE OUBLIÉ
 ============================ */
 const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-
   try {
-      const user = await User.findOne({ email });
+    const { email } = req.body;
 
-      // On ne révèle pas si l'email existe ou non
-      if (!user) {
-          return res.status(200).json({
-              message: "Si cet email existe, un lien de réinitialisation a été envoyé."
-          });
-      }
+    const user = await User.findOne({ email });
 
-      // Génération d’un token sécurisé
-      const resetToken = crypto.randomBytes(32).toString("hex");
-
-      // Stockage du token + expiration (15 minutes)
-      user.resetPasswordToken = resetToken;
-      user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
-
-      await user.save();
-
-      // Pour l'instant, on renvoie le token (utile pour tests)
+    if (!user) {
       return res.status(200).json({
-          message: "Lien de réinitialisation généré.",
-          resetToken
+        message: "Si cet email existe, un lien a été envoyé."
       });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Lien généré",
+      resetToken
+    });
 
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Erreur serveur." });
+    console.error(error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 };
 
 /* ============================
-   RÉINITIALISATION DU MOT DE PASSE
+   RESET PASSWORD
 ============================ */
 const resetPassword = async (req, res) => {
-  const { token } = req.params;
-  const { password } = req.body;
-
   try {
-      const user = await User.findOne({
-          resetPasswordToken: token,
-          resetPasswordExpire: { $gt: Date.now() }
-      });
+    const { token } = req.params;
+    const { password } = req.body;
 
-      if (!user) {
-          return res.status(400).json({ message: "Lien invalide ou expiré." });
-      }
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
 
-      // Hash du nouveau mot de passe
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
+    if (!user) {
+      return res.status(400).json({ message: "Token invalide" });
+    }
 
-      // Suppression du token
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpire = undefined;
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
 
-      await user.save();
+    await user.save();
 
-      res.status(200).json({ message: "Mot de passe réinitialisé avec succès." });
+    res.json({ message: "Mot de passe réinitialisé" });
 
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Erreur serveur." });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 };
 
 /* ============================
-   PAYPAL : CRÉATION D’ORDRE
+   PAYPAL ORDER
 ============================ */
 const createPayPalOrder = async (req, res) => {
-  const request = new paypal.orders.OrdersCreateRequest();
-  request.prefer('return=representation');
-  request.requestBody({
-    intent: 'CAPTURE',
-    purchase_units: [
-      { amount: { currency_code: 'EUR', value: '10.00' } }
-    ]
-  });
-
   try {
+    const request = new paypal.orders.OrdersCreateRequest();
+
+    request.prefer('return=representation');
+    request.requestBody({
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          amount: {
+            currency_code: 'EUR',
+            value: '10.00'
+          }
+        }
+      ]
+    });
+
     const order = await client.execute(request);
+
     res.json({ id: order.result.id });
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
 
 /* ============================
-   PAYPAL : CAPTURE + MISE À JOUR USER
+   PAYPAL CAPTURE
 ============================ */
 const capturePayPalOrder = async (req, res) => {
-  const { orderID } = req.body;
-
-  const request = new paypal.orders.OrdersCaptureRequest(orderID);
-  request.requestBody({});
-
   try {
+    const { orderID } = req.body;
+
+    const request = new paypal.orders.OrdersCaptureRequest(orderID);
+    request.requestBody({});
+
     const capture = await client.execute(request);
 
     if (capture.result.status === 'COMPLETED') {
@@ -141,19 +176,19 @@ const capturePayPalOrder = async (req, res) => {
       user.isPaid = true;
       await user.save();
 
-      return res.json({ message: 'Paiement réussi', user });
+      return res.json({ message: "Paiement réussi", user });
     }
 
-    res.status(400).json({ message: 'Paiement non complété' });
+    res.status(400).json({ message: "Paiement non validé" });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { 
-  registerUser, 
-  createPayPalOrder, 
+module.exports = {
+  registerUser,
+  createPayPalOrder,
   capturePayPalOrder,
   forgotPassword,
   resetPassword

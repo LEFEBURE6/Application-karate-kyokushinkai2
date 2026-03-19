@@ -2,26 +2,19 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-// ✅ Connexion MongoDB
 connectDB();
 
 app.use(cors());
 app.use(express.json());
 
-// ✅ Route test serveur
-app.get("/", (req, res) => {
-  res.json({ message: "Backend OK avec DB 🚀" });
-});
+app.use('/api/auth', authRoutes);
 
-// ✅ Route TEST register (sans utiliser authRoutes)
-app.post("/api/auth/register", (req, res) => {
-  res.json({
-    message: "Test OK avec DB",
-    token: "fake-token-123"
-  });
+app.get("/", (req, res) => {
+  res.json({ message: "Backend opérationnel ✔️" });
 });
 
 const PORT = process.env.PORT || 5000;
