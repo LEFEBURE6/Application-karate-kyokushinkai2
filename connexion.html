@@ -92,7 +92,8 @@
     </div>
 
 <script>
-const API_URL = "http://localhost:5000/api/auth/login";
+/* URL API Render */
+const API_URL = "https://application-karate-kyokushinkai2.onrender.com/api/auth/login";
 
 async function login() {
     const email = document.getElementById("login-email").value;
@@ -113,20 +114,19 @@ async function login() {
         const data = await res.json();
 
         if (!res.ok) {
-            alert(data.message);
+            alert(data.message || "Identifiants incorrects.");
             return;
         }
 
-        // Stockage du token
+        /* Stockage du token */
         localStorage.setItem("token", data.token);
 
-        // Si l'utilisateur n'a pas payé → paiement.html
+        /* Redirection selon paiement */
         if (!data.isPaid) {
             window.location.href = "paiement.html";
             return;
         }
 
-        // Sinon → interface.html
         window.location.href = "interface.html";
 
     } catch (error) {
@@ -137,4 +137,5 @@ async function login() {
 
 </body>
 </html>
+
 

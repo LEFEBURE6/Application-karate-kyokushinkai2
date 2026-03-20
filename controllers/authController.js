@@ -1,12 +1,13 @@
 const User = require('../models/User');
-const generateToken = require('../util/generateToken');
 const bcrypt = require('bcryptjs');
-const paypal = require('@paypal/checkout-server-sdk');
-const crypto = require("crypto");
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const sendEmail = require('../util/sendEmail');
+const generateToken = require('../util/generateToken');
 
-/* ============================
-   CONFIG PAYPAL
-============================ */
+// PAYPAL SDK
+const paypal = require('@paypal/checkout-server-sdk');
+
 const environment = process.env.PAYPAL_MODE === 'live'
   ? new paypal.core.LiveEnvironment(
       process.env.PAYPAL_CLIENT_ID,
@@ -20,54 +21,74 @@ const environment = process.env.PAYPAL_MODE === 'live'
 const client = new paypal.core.PayPalHttpClient(environment);
 
 /* ============================
-   INSCRIPTION (CORRIGÉE)
+   INSCRIPTION
 ============================ */
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { email, password } = req.body;
 
-    // Vérification des champs
-    if (!email || !password) {
+    if (!email || !password)
       return res.status(400).json({ message: "Champs requis" });
-    }
 
-    // Vérifier si utilisateur existe
     const userExists = await User.findOne({ email });
-    if (userExists) {
+    if (userExists)
       return res.status(400).json({ message: "Utilisateur déjà inscrit" });
-    }
 
-    // Hash mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Création user
     const user = await User.create({
-      name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      isPaid: false
     });
 
-    // Token
     const token = generateToken(user._id);
 
     res.status(201).json({
       _id: user._id,
-      name: user.name,
       email: user.email,
+      isPaid: user.isPaid,
       token
     });
 
   } catch (error) {
     console.error("❌ ERREUR registerUser :", error);
-    res.status(500).json({
-      message: "Erreur serveur",
-      error: error.message
-    });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 };
 
 /* ============================
-   MOT DE PASSE OUBLIÉ
+   CONNEXION
+============================ */
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user)
+      return res.status(400).json({ message: "Email ou mot de passe incorrect" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(400).json({ message: "Email ou mot de passe incorrect" });
+
+    const token = generateToken(user._id);
+
+    res.json({
+      _id: user._id,
+      email: user.email,
+      isPaid: user.isPaid,
+      token
+    });
+
+  } catch (error) {
+    console.error("❌ ERREUR loginUser :", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
+/* ============================
+   MOT DE PASSE OUBLIÉ (EMAIL)
 ============================ */
 const forgotPassword = async (req, res) => {
   try {
@@ -75,26 +96,34 @@ const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.status(200).json({
-        message: "Si cet email existe, un lien a été envoyé."
-      });
-    }
+    // Toujours répondre OK pour éviter de révéler si un email existe
+    if (!user)
+      return res.status(200).json({ message: "Si cet email existe, un lien a été envoyé." });
 
     const resetToken = crypto.randomBytes(32).toString("hex");
 
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
-
     await user.save();
 
-    res.status(200).json({
-      message: "Lien généré",
-      resetToken
-    });
+    const resetURL = `https://application-karate-kyokushinkai2.onrender.com/reset-password.html?token=${resetToken}`;
+
+    const html = `
+      <h2>Réinitialisation de votre mot de passe</h2>
+      <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
+      <p>Cliquez sur le lien ci-dessous :</p>
+      <a href="${resetURL}" style="padding:10px 20px;background:#0070ba;color:white;text-decoration:none;border-radius:5px;">
+        Réinitialiser mon mot de passe
+      </a>
+      <p>Ce lien expire dans 15 minutes.</p>
+    `;
+
+    await sendEmail(email, "Réinitialisation de votre mot de passe", html);
+
+    res.status(200).json({ message: "Email envoyé." });
 
   } catch (error) {
-    console.error(error);
+    console.error("❌ ERREUR forgotPassword :", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
@@ -112,9 +141,8 @@ const resetPassword = async (req, res) => {
       resetPasswordExpire: { $gt: Date.now() }
     });
 
-    if (!user) {
-      return res.status(400).json({ message: "Token invalide" });
-    }
+    if (!user)
+      return res.status(400).json({ message: "Token invalide ou expiré" });
 
     user.password = await bcrypt.hash(password, 10);
     user.resetPasswordToken = undefined;
@@ -122,15 +150,16 @@ const resetPassword = async (req, res) => {
 
     await user.save();
 
-    res.json({ message: "Mot de passe réinitialisé" });
+    res.json({ message: "Mot de passe réinitialisé avec succès" });
 
   } catch (error) {
+    console.error("❌ ERREUR resetPassword :", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
 
 /* ============================
-   PAYPAL ORDER
+   PAYPAL - CREATE ORDER
 ============================ */
 const createPayPalOrder = async (req, res) => {
   try {
@@ -154,13 +183,13 @@ const createPayPalOrder = async (req, res) => {
     res.json({ id: order.result.id });
 
   } catch (error) {
-    console.error(error);
+    console.error("❌ ERREUR createPayPalOrder :", error);
     res.status(500).json({ message: error.message });
   }
 };
 
 /* ============================
-   PAYPAL CAPTURE
+   PAYPAL - CAPTURE ORDER
 ============================ */
 const capturePayPalOrder = async (req, res) => {
   try {
@@ -182,16 +211,20 @@ const capturePayPalOrder = async (req, res) => {
     res.status(400).json({ message: "Paiement non validé" });
 
   } catch (error) {
+    console.error("❌ ERREUR capturePayPalOrder :", error);
     res.status(500).json({ message: error.message });
   }
 };
 
 module.exports = {
   registerUser,
-  createPayPalOrder,
-  capturePayPalOrder,
+  loginUser,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  createPayPalOrder,
+  capturePayPalOrder
 };
+
+
 
 

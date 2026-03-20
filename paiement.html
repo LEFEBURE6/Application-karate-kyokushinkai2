@@ -70,6 +70,11 @@
             transform: scale(1.05);
         }
 
+        /* Masquer le bouton PayPal au début */
+        .hidden {
+            display: none;
+        }
+
         #paypal-button-container {
             margin-top: 20px;
         }
@@ -101,10 +106,12 @@
 
     <div id="paypal-button-container" class="hidden"></div>
 
-<script src="https://www.paypal.com/sdk/js?client-id=ton_client_id_paypal&currency=EUR"></script>
+<!-- SDK PAYPAL AVEC TON VRAI CLIENT ID -->
+<script src="https://www.paypal.com/sdk/js?client-id=Ac2wOU5KHdYUoZMP7RcKW6lFOhYJJYsNdMVbm_rItAksk1gNFN_CXdsqZ8yLzXU3p-jZc9f4W4IxGzIQ&currency=EUR"></script>
 
 <script>
-const API_URL = "http://localhost:5000/api/auth";
+/* URL API Render */
+const API_URL = "https://application-karate-kyokushinkai2.onrender.com/api/auth";
 
 function showPayPal() {
     const accept = document.getElementById("accept-cgv").checked;
@@ -146,6 +153,8 @@ function showPayPal() {
             if (result.message === "Paiement réussi") {
                 alert("Paiement validé !");
                 window.location.href = "interface.html";
+            } else {
+                alert("Erreur lors de la validation du paiement.");
             }
         }
 
